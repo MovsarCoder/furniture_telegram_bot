@@ -178,3 +178,4 @@ class CrudCategory:
             except SQLAlchemyError as exc:
                 logging.exception("Ошибка при получении всех категорий: %s", exc)
                 return []
+
