@@ -5,8 +5,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from database.engine import AsyncSessionLocal
-
-from database.models import User, Cooperation, Category
+from database.models import User, Cooperation, Category, Furniture
 
 
 class UserCrud:
@@ -179,3 +178,90 @@ class CrudCategory:
                 logging.exception("Ошибка при получении всех категорий: %s", exc)
                 return []
 
+
+class CrudFurniture:
+    def __init__(self):
+        self.session = AsyncSessionLocal
+
+    async def create_furniture(
+            self,
+            description: str,
+            category: str,
+            country: str,
+    ) -> Optional[Furniture]:
+        """
+        Создаёт запись Furniture и возвращает объект (или None при ошибке).
+        Возврат объекта сохраняет совместимость с булевой проверкой (object -> True).
+        """
+        # Простейшая валидация/нормализация входных данных
+        description = (description or "").strip()
+        category = (category or "").strip()
+        country = (country or "").strip()
+
+        if not description:
+            logging.warning("create_furniture called with empty description")
+            return None
+
+        if not category:
+            logging.warning("create_furniture called with empty category")
+            return None
+
+        if not country:
+            logging.warning("create_furniture called with empty country")
+            return None
+
+        async with self.session() as session:
+            try:
+                new_item = Furniture(
+                    description=description,
+                    category_name=category,
+                    country_origin=country,
+                )
+                session.add(new_item)
+                await session.commit()
+
+                # Обновим объект из БД (получим id и прочие default-поля)
+                try:
+                    await session.refresh(new_item)
+                except Exception:
+                    # refresh не обязателен, но полезен; игнорируем если не поддерживается
+                    logging.debug("session.refresh failed or not needed for Furniture")
+
+                logging.info("Создана мебель: %s (id=%s)", description, getattr(new_item, "id", None))
+                return new_item
+
+            except SQLAlchemyError as exc:
+                await session.rollback()
+                logging.exception("DB error in create_furniture: %s", exc)
+                return None
+
+            except Exception as exc:
+                await session.rollback()
+                logging.exception("Unexpected error in create_furniture: %s", exc)
+                return None
+
+    async def get_furniture_by_category_and_country(self,
+                                                    category_name: str,
+                                                    country: str):
+        async with self.session() as session:
+            try:
+                stmt = select(Furniture).where(
+                    Furniture.category_name == category_name,
+                    Furniture.country_origin == country
+                )
+                result = await session.execute(stmt)
+                furniture = result.scalars().all()
+                return furniture or None
+
+            except SQLAlchemyError as exc:
+                logging.exception("DB error in get_furniture_by_category_and_country: %s", exc)
+
+#
+# async def main():
+#     crud = CrudFurniture()
+#     furniture = await crud.get_furniture_by_category_and_country(category_name="🛏️ Матрасы", country="🇷🇺 Россия")
+#     for i in furniture:
+#         print(i.id, i.description, i.category_name, i.country_origin)
+#
+#
+# asyncio.run(main())

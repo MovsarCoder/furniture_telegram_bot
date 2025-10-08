@@ -1,5 +1,5 @@
-import logging
 import asyncio
+import logging
 
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
@@ -8,9 +8,9 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.methods import DeleteWebhook
 from aiogram.types import BotCommandScopeAllPrivateChats
 
+from handlers import router
 from keyboard.default_keyboard import commands
 from settings.config import ConfigBot
-from handlers import router
 
 logging.basicConfig(
     level=logging.INFO,

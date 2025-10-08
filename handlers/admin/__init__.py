@@ -14,3 +14,6 @@ router.include_router(new_category_furniture_router)
 
 from .list_categories_furniture_handler import router as list_categories_furniture_router
 router.include_router(list_categories_furniture_router)
+
+from .new_furniture_handler import router as new_furniture_router
+router.include_router(new_furniture_router)

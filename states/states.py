@@ -8,3 +8,9 @@ class CooperationStates(StatesGroup):
 class NewCategoryStates(StatesGroup):
     name_category = State()
     description_category = State()
+
+
+class NewFurnitureStates(StatesGroup):
+    description = State()
+    category = State()
+    country = State()

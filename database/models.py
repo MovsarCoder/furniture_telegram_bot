@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Float, Text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
 
 from .engine import Base
 
@@ -34,16 +34,13 @@ class Furniture(Base):
     __tablename__ = 'furniture'
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    price = Column(Float, nullable=False)
-    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
-    in_stock = Column(Boolean, default=True, nullable=False)
+    category_name = Column(String, ForeignKey('categories.name'), nullable=False)
     country_origin = Column(String, nullable=True)  # Страна производства (RU, TR и т.д.)
     created_at = Column(DateTime, default=lambda: datetime.now())
 
     def __repr__(self):
-        return f"<Furniture(id={self.id}, name='{self.name}', price={self.price})>"
+        return f"<Furniture(id={self.id})>"
 
 
 class Cooperation(Base):

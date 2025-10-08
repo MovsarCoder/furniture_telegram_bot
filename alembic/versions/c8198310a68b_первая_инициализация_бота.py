@@ -1,8 +1,8 @@
 """Первая инициализация бота
 
-Revision ID: f09f5d99560a
+Revision ID: c8198310a68b
 Revises: 
-Create Date: 2025-10-08 00:06:14.018608
+Create Date: 2025-10-08 22:36:41.301701
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'f09f5d99560a'
+revision: str = 'c8198310a68b'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -51,14 +51,11 @@ def upgrade() -> None:
     )
     op.create_table('furniture',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sa.String(), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('price', sa.Float(), nullable=False),
-    sa.Column('category_id', sa.Integer(), nullable=False),
-    sa.Column('in_stock', sa.Boolean(), nullable=False),
+    sa.Column('category_name', sa.String(), nullable=False),
     sa.Column('country_origin', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
-    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
+    sa.ForeignKeyConstraint(['category_name'], ['categories.name'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_furniture_id'), 'furniture', ['id'], unique=False)
