@@ -16,7 +16,7 @@ async def back_to_main_callback(callback_query: types.CallbackQuery, state: FSMC
     """Возврат в главное меню."""
     # Очищаем состояние
     await state.clear()
-    
+
     # Показываем главное меню
     welcome_text = (
         "Здравствуйте! 👋\n\n"
@@ -27,7 +27,7 @@ async def back_to_main_callback(callback_query: types.CallbackQuery, state: FSMC
         "🔹 Для оформления заказа потребуется имя и телефон.\n\n"
         "Чем начнём? Выберите категорию из меню 👇"
     )
-    
+
     await callback_query.message.edit_text(
         welcome_text,
         reply_markup=make_row_inline_keyboards(start_kb)

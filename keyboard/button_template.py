@@ -1,4 +1,5 @@
 # Главное меню
+
 start_kb = [
     ("🛏️ Спальная мебель", "sleep_furniture"),
     ("🍳 Кухонная мебель", "kitchen_furniture"),
@@ -58,3 +59,9 @@ def get_accept_cancel_buttons(request_id: int):
         ("✅ Одобрить", f"accepted_cooperation_requests_{request_id}"),
         ("⏪ Отмена", "show_requests_cooperation_2")
     ]
+
+
+send_furnitures_buttons = [
+    "⏩",
+    "🏠 Главное меню"
+]
