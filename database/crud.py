@@ -5,7 +5,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from database.engine import AsyncSessionLocal
-from database.models import User, Cooperation, Category, Furniture
+from database.models import User, Cooperation, Category, Furniture, FurniturePhoto
 
 
 class UserCrud:
@@ -256,12 +256,64 @@ class CrudFurniture:
             except SQLAlchemyError as exc:
                 logging.exception("DB error in get_furniture_by_category_and_country: %s", exc)
 
-#
-# async def main():
-#     crud = CrudFurniture()
-#     furniture = await crud.get_furniture_by_category_and_country(category_name="🛏️ Матрасы", country="🇷🇺 Россия")
-#     for i in furniture:
-#         print(i.id, i.description, i.category_name, i.country_origin)
-#
-#
-# asyncio.run(main())
+    async def add_photos_to_furniture(self, furniture_id: int, photo_file_ids: List[str]) -> bool:
+        """
+        Добавляет фотографии к мебели.
+        
+        Args:
+            furniture_id: ID мебели
+            photo_file_ids: Список file_id фотографий из Telegram
+            
+        Returns:
+            bool: True если успешно, False если ошибка
+        """
+        if not photo_file_ids:
+            return False
+
+        async with self.session() as session:
+            try:
+                # Создаем объекты фотографий
+                photos = []
+                for file_id in photo_file_ids:
+                    photo = FurniturePhoto(
+                        furniture_id=furniture_id,
+                        file_id=file_id
+                    )
+                    photos.append(photo)
+
+                # Добавляем все фотографии
+                session.add_all(photos)
+                await session.commit()
+                logging.info("Добавлено %d фотографий к мебели с id=%s", len(photos), furniture_id)
+                return True
+
+            except SQLAlchemyError as exc:
+                await session.rollback()
+                logging.exception("DB error in add_photos_to_furniture: %s", exc)
+                return False
+
+            except Exception as exc:
+                await session.rollback()
+                logging.exception("Unexpected error in add_photos_to_furniture: %s", exc)
+                return False
+
+    async def get_furniture_photos(self, furniture_id: int) -> List[FurniturePhoto]:
+        """
+        Получает все фотографии для мебели.
+        
+        Args:
+            furniture_id: ID мебели
+            
+        Returns:
+            List[FurniturePhoto]: Список фотографий
+        """
+        async with self.session() as session:
+            try:
+                stmt = select(FurniturePhoto).where(FurniturePhoto.furniture_id == furniture_id)
+                result = await session.execute(stmt)
+                photos = result.scalars().all()
+                return photos or []
+
+            except SQLAlchemyError as exc:
+                logging.exception("DB error in get_furniture_photos: %s", exc)
+                return []

@@ -1,14 +1,10 @@
-"""
-Унифицированный обработчик для всех типов мебели.
-Заменяет отдельные обработчики для каждого типа мебели.
-"""
-
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
 from database.crud import CrudFurniture
-from keyboard.button_template import contry_of_origin_kb, kitchen_subcategory_kb, send_furnitures_buttons
-from keyboard.keyboard_builder import make_row_inline_keyboards, make_row_keyboards
+from keyboard.button_template import contry_of_origin_kb, kitchen_subcategory_kb
+from keyboard.keyboard_builder import make_row_inline_keyboards
+from settings import config
 from .navigation_handler import back_to_main_callback
 
 router = Router()
@@ -45,22 +41,15 @@ TYPES_WITH_SUBCATEGORIES = {'kitchen_furniture'}
 
 
 async def show_furniture_list(message: types.Message, category_name: str, country: str = "🇷🇺 Россия"):
-    """
-    Показывает список мебели по категории и стране производства.
-    
-    Args:
-        message: Сообщение для ответа
-        category_name: Название категории мебели
-        country: Страна производства (по умолчанию Россия)
-    """
     crud = CrudFurniture()
     furniture_list = await crud.get_furniture_by_category_and_country(
         category_name=category_name,
         country=country
     )
-    number = ""
-    telegram = ""
-    instagram = ""
+
+    number = config.NUMBER
+    telegram = config.TELEGRAM
+    instagram = config.INSTAGRAM
     text = (
         f"🪑 Для заказа мебели пишите нам:\n"
         f"📲 WhatsApp: https://wa.me/+{number}\n"
@@ -75,16 +64,34 @@ async def show_furniture_list(message: types.Message, category_name: str, countr
 
     if furniture_list:
         for furniture in furniture_list:
-            await message.answer(
+            furniture_text = (
                 f"🆔 ID: {furniture.id}\n"
                 f"📝 Описание: {furniture.description}\n"
                 f"🏷️ Категория Мебели: {furniture.category_name}\n"
                 f"🌍 Страна производства: {furniture.country_origin}\n"
                 f"📆 Дата добавления: {furniture.created_at}\n\n\n"
                 f"{'-' * 50}\n"
-                f"{text}",
+                f"{text}")
 
-                disable_web_page_preview=True, reply_markup=make_row_keyboards(send_furnitures_buttons))
+            # Получаем фотографии мебели
+            photos = await crud.get_furniture_photos(furniture.id)
+
+            # Отправляем фотографии, если они есть
+            if photos:
+                media_group = [types.InputMediaPhoto(media=photo.file_id) for photo in photos[:10]]
+
+                if media_group:
+                    try:
+                        await message.answer_media_group(media_group)
+                    except Exception:
+                        for photo in photos[:10]:
+                            await message.answer_photo(photo.file_id)
+            else:
+                await message.answer("📷 Фотографии отсутствуют")
+
+            # Отправляем текстовое описание
+            await message.answer(furniture_text, disable_web_page_preview=True)
+
     else:
         await message.answer("📭 Пока нет добавленой мебели по данной категории.")
 
@@ -95,14 +102,12 @@ async def furniture_callback(callback_query: types.CallbackQuery, state: FSMCont
     furniture_type = callback_query.data
     await state.update_data(type_furniture=furniture_type)
 
-    # Если для этого типа мебели есть подкатегории
     if furniture_type in TYPES_WITH_SUBCATEGORIES:
         await callback_query.message.edit_text(
             "Выберите тип кухонной мебели:",
             reply_markup=make_row_inline_keyboards(kitchen_subcategory_kb)
         )
 
-    # Если для этого типа мебели нужно показывать страну производства
     elif furniture_type in TYPES_WITH_ORIGIN:
         await callback_query.message.edit_text(
             "Отлично! Теперь выберите страну производства:",
@@ -110,7 +115,6 @@ async def furniture_callback(callback_query: types.CallbackQuery, state: FSMCont
         )
 
     else:
-        # Для остальных типов мебели сразу показываем мебель (страна по умолчанию - Россия)
         category_name = FURNITURE_NAMES.get(furniture_type, 'Спальная мебель')
         await show_furniture_list(callback_query.message, category_name)
 
@@ -120,15 +124,13 @@ async def furniture_callback(callback_query: types.CallbackQuery, state: FSMCont
 @router.callback_query(F.data.in_(KITCHEN_SUBCATEGORIES.keys()))
 @router.callback_query(F.data == "back_to_main")
 async def kitchen_subcategory_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    """Обработчик выбора подкатегории кухонной мебели или возврата в главное меню."""
     if callback_query.data == "back_to_main":
         await back_to_main_callback(callback_query, state)
+
     else:
-        # Выбрана подкатегория кухонной мебели
         subcategory = callback_query.data
         subcategory_name = KITCHEN_SUBCATEGORIES.get(subcategory, 'Кухня')
 
-        # Сохраняем подкатегорию
         await state.update_data(kitchen_subcategory=subcategory)
 
         await callback_query.message.edit_text(
@@ -141,16 +143,12 @@ async def kitchen_subcategory_callback(callback_query: types.CallbackQuery, stat
 
 @router.callback_query(F.data.in_(ORIGIN_NAMES.keys()))
 async def origin_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    """Обработчик выбора страны производства."""
-    # Получаем данные из состояния
     user_data = await state.get_data()
     furniture_type = user_data.get('type_furniture', 'sleep_furniture')
     origin_type = callback_query.data
 
-    # Сохраняем выбранную страну производства
     await state.update_data(origin_type=origin_type)
 
-    # Формируем сообщение с выбором пользователя
     category_name = FURNITURE_NAMES.get(furniture_type, 'Спальная мебель')
     origin_name = ORIGIN_NAMES.get(origin_type, '🇷🇺 Россия')
 

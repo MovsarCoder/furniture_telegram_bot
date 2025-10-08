@@ -2,6 +2,7 @@ from datetime import datetime, timezone, timedelta
 from uuid import uuid4
 
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
+from sqlalchemy.orm import relationship
 
 from .engine import Base
 
@@ -38,9 +39,22 @@ class Furniture(Base):
     category_name = Column(String, ForeignKey('categories.name'), nullable=False)
     country_origin = Column(String, nullable=True)  # Страна производства (RU, TR и т.д.)
     created_at = Column(DateTime, default=lambda: datetime.now())
+    
+    # Связь с фотографиями
+    photos = relationship("FurniturePhoto", back_populates="furniture", cascade="all, delete-orphan")
 
-    def __repr__(self):
-        return f"<Furniture(id={self.id})>"
+
+class FurniturePhoto(Base):
+    __tablename__ = 'furniture_photos'
+
+    id = Column(Integer, primary_key=True, index=True)
+    furniture_id = Column(Integer, ForeignKey('furniture.id'), nullable=False)
+    file_id = Column(String, nullable=False)  # ID файла в Telegram
+    file_path = Column(String, nullable=True)  # Путь к файлу (опционально)
+    created_at = Column(DateTime, default=lambda: datetime.now())
+    
+    # Связь с мебелью
+    furniture = relationship("Furniture", back_populates="photos")
 
 
 class Cooperation(Base):

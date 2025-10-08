@@ -14,3 +14,4 @@ class NewFurnitureStates(StatesGroup):
     description = State()
     category = State()
     country = State()
+    photos = State()  # Новое состояние для загрузки фотографий
