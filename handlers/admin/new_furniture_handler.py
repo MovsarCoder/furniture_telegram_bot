@@ -2,8 +2,8 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
 from database.crud import CrudCategory, CrudFurniture
-from keyboard.button_template import country_kb, kitchen_subcategory_kb
-from keyboard.keyboard_builder import make_row_keyboards
+from keyboard.button_template import country_kb, kitchen_subcategory_kb, more_added_furniture
+from keyboard.keyboard_builder import make_row_keyboards, make_row_inline_keyboards
 from states.states import NewFurnitureStates
 
 router = Router()
@@ -92,7 +92,7 @@ async def get_kitchen_type(message: types.Message, state: FSMContext):
 
     # Сохраняем тип кухни
     await state.update_data(kitchen_type=kitchen_type)
-    
+
     # Для кухонной мебели страна всегда Россия
     await state.update_data(country_name="🇷🇺 Россия")
 
@@ -192,6 +192,7 @@ async def get_photos(message: types.Message, state: FSMContext):
         )
 
         await message.answer(text, reply_markup=types.ReplyKeyboardRemove())
+        await message.answer("Хотите добавить еще? Нажмите на команду 👇", reply_markup=make_row_inline_keyboards(more_added_furniture))
         await state.clear()
         return
 

@@ -13,6 +13,7 @@ router = Router()
 
 
 @router.message(filters.Command("start"))
+@router.message(F.text == "🏠 Главное меню")  # Добавляем обработчик для кнопки "Главное меню"
 async def start(message: types.Message, state: FSMContext):
     await state.clear()
 

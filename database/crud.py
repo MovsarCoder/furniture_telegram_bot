@@ -248,7 +248,7 @@ class CrudFurniture:
                 stmt = select(Furniture).where(
                     Furniture.category_name == category_name,
                     Furniture.country_origin == country
-                )
+                ).order_by(Furniture.id)  # Сортировка по ID для стабильной пагинации
                 result = await session.execute(stmt)
                 furniture = result.scalars().all()
                 return furniture or None
