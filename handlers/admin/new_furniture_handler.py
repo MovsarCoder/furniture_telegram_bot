@@ -2,7 +2,7 @@ from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
 from database.crud import CrudCategory, CrudFurniture
-from keyboard.button_template import country_kb
+from keyboard.button_template import country_kb, kitchen_subcategory_kb
 from keyboard.keyboard_builder import make_row_keyboards
 from states.states import NewFurnitureStates
 
@@ -61,14 +61,58 @@ async def get_category(message: types.Message, state: FSMContext):
 
     await state.update_data(category_name=category_name)
 
+    # Проверка на кухонную мебель
+    if "кухонная" in category_name.lower():
+        text = (
+            f"🗂 Категория выбрана: <b>{category_name}</b>\n\n"
+            "Теперь выберите <b>тип кухни</b> из списка ниже:"
+        )
+
+        await message.answer(text, reply_markup=make_row_keyboards(kitchen_subcategory_kb))
+        await state.set_state(NewFurnitureStates.kitchen_type)
+    else:
+        # Для остальных категорий показываем выбор страны
+        text = (
+            f"🗂 Категория выбрана: <b>{category_name}</b>\n\n"
+            "Теперь укажите <b>страну происхождения</b> мебели 🌍\n"
+            "Выберите из списка ниже:"
+        )
+
+        await message.answer(text, reply_markup=make_row_keyboards(country_kb))
+        await state.set_state(NewFurnitureStates.country)
+
+
+@router.message(NewFurnitureStates.kitchen_type)
+async def get_kitchen_type(message: types.Message, state: FSMContext):
+    kitchen_type = (message.text or '').strip()
+
+    if not kitchen_type:
+        await message.answer("⚠️ Пожалуйста, выберите тип кухни из предложенного списка.")
+        return
+
+    # Сохраняем тип кухни
+    await state.update_data(kitchen_type=kitchen_type)
+    
+    # Для кухонной мебели страна всегда Россия
+    await state.update_data(country_name="🇷🇺 Россия")
+
     text = (
-        f"🗂 Категория выбрана: <b>{category_name}</b>\n\n"
-        "Теперь укажите <b>страну происхождения</b> мебели 🌍\n"
-        "Выберите из списка ниже:"
+        f"🍳 Тип кухни выбран: <b>{kitchen_type}</b>\n\n"
+        "Страна происхождения: <b>🇷🇺 Россия</b> (по умолчанию)\n\n"
+        "Теперь отправьте <b>фотографии</b> мебели 📸\n"
+        "Вы можете отправить несколько фотографий (не более 10).\n"
+        "Когда закончите, нажмите кнопку <b>«Завершить добавление»</b> ниже."
     )
 
-    await message.answer(text, reply_markup=make_row_keyboards(country_kb))
-    await state.set_state(NewFurnitureStates.country)
+    # Создаем кнопку для завершения добавления фотографий
+    finish_button = types.ReplyKeyboardMarkup(
+        keyboard=[[types.KeyboardButton(text="✅ Завершить добавление")]],
+        resize_keyboard=True
+    )
+
+    await message.answer(text, reply_markup=finish_button)
+    await state.set_state(NewFurnitureStates.photos)
+    await state.update_data(photos=[])
 
 
 @router.message(NewFurnitureStates.country)
@@ -112,6 +156,11 @@ async def get_photos(message: types.Message, state: FSMContext):
         description = data.get("description_new_furniture", 'Нет описания')
         category_name = data.get("category_name", "Без категории")
         country_name = data.get("country_name", "Не указана")
+        kitchen_type = data.get("kitchen_type")
+
+        # Для кухонной мебели добавляем тип кухни в описание
+        if kitchen_type and "кухонная" in category_name.lower():
+            description = f"[{kitchen_type}] {description}"
 
         crud = CrudFurniture()
         new_furniture = await crud.create_furniture(
@@ -135,6 +184,7 @@ async def get_photos(message: types.Message, state: FSMContext):
         text = (
             "🎉 <b>Мебель успешно добавлена!</b>\n\n"
             f"<b>Категория:</b> {category_name}\n"
+            f"<b>Тип кухни:</b> {kitchen_type or 'Не указан'}\n"
             f"<b>Страна:</b> {country_name}\n"
             f"<b>Описание:</b> {description}\n"
             f"<b>Фотографий:</b> {len(photos)}\n\n"
@@ -147,7 +197,7 @@ async def get_photos(message: types.Message, state: FSMContext):
 
     # Если получено фото, добавляем его к списку
     if message.photo:
-        # Берем фото самого высокого качества (последний элемент в списке)
+        # Берем фото самого высокого качества
         photo_file_id = message.photo[-1].file_id
         photos.append(photo_file_id)
         await state.update_data(photos=photos)
