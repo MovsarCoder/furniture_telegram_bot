@@ -75,7 +75,9 @@ async def show_furniture_list(message: types.Message, category_name: str, countr
         ]
 
     if not furniture_list:
-        await message.answer("📭 Пока нет добавленой мебели по данной категории.")
+        await message.answer("📭 К сожалению, по данной категории пока нет добавленной мебели.\n\n"
+                             "Но не переживайте! Наш ассортимент постоянно пополняется новыми моделями.\n"
+                             "Рекомендуем периодически возвращаться и смотреть обновления.")
         return
 
     # Пагинация
@@ -84,18 +86,6 @@ async def show_furniture_list(message: types.Message, category_name: str, countr
     end_index = start_index + ITEMS_PER_PAGE
     paginated_furniture = furniture_list[start_index:end_index]
 
-    # Контактная информация
-    contact_info = (
-        f"🪑 Для заказа мебели пишите нам:\n"
-        f"📲 WhatsApp: https://wa.me/+{config.NUMBER}\n"
-        f'💬 Telegram: https://t.me/{config.TELEGRAM}\n'
-        f'{"-" * 50}\n'
-        f"✨ Будьте в курсе новинок и акций!\n"
-        "Подписывайтесь на нас в Instagram, чтобы не пропустить свежие коллекции и вдохновение для вашего дома:\n"
-        f"📸 Instagram: https://instagram.com/{config.INSTAGRAM}\n"
-        f'{"-" * 50}\n'
-    )
-
     # Отправляем товары на текущей странице
     for furniture in paginated_furniture:
         # Извлекаем тип кухни из описания для кухонной мебели
@@ -103,18 +93,25 @@ async def show_furniture_list(message: types.Message, category_name: str, countr
         if "кухонная" in category_name.lower():
             kt, clean_description = extract_kitchen_type(furniture.description)
             if kt:
-                displayed_kitchen_type = f"🍳 Тип кухни: {kt}\n"
+                displayed_kitchen_type = f"🍳 <b>Тип кухни:</b> {kt}\n"
         else:
             clean_description = furniture.description
 
+        # Формируем красивое описание мебели
         furniture_text = (
+            f"🪑 <b>{category_name}</b>\n"
+            f"{'─' * 30}\n"
             f"{clean_description}\n\n"
             f"{displayed_kitchen_type}"
-            f"🏷️ Категория Мебели: {furniture.category_name}\n"
-            f"🌍 Страна производства: {furniture.country_origin}\n"
-            f"📆 Дата добавления: {furniture.created_at}\n\n\n"
-            f"{'-' * 50}\n"
-            f"{contact_info}"
+            f"🌍 <b>Страна производства:</b> {furniture.country_origin}\n"
+            f"📅 <b>Дата добавления:</b> {furniture.created_at.strftime('%d.%m.%Y') if furniture.created_at else 'Не указана'}\n"
+            f"{'─' * 30}\n\n"
+            f"💬 <b>Для заказа этой мебели:</b>\n"
+            f"📲 WhatsApp: https://wa.me/+{config.NUMBER}\n"
+            f".telegram: https://t.me/{config.TELEGRAM}\n\n"
+            f"✨ <b>Подписывайтесь на нас в Instagram</b>\n"
+            f"и будьте в курсе новинок и акций:\n"
+            f"📸 https://instagram.com/{config.INSTAGRAM}"
         )
 
         # Отправляем фотографии
@@ -137,7 +134,7 @@ async def show_furniture_list(message: types.Message, category_name: str, countr
 
     # Кнопка "Еще" если есть еще товары
     if end_index < total_items:
-        keyboard_buttons.append([types.KeyboardButton(text="Еще")])
+        keyboard_buttons.append([types.KeyboardButton(text="🔄 Еще")])
 
     # Кнопка "Главное меню" всегда
     keyboard_buttons.append([types.KeyboardButton(text="🏠 Главное меню")])
@@ -148,9 +145,16 @@ async def show_furniture_list(message: types.Message, category_name: str, countr
         resize_keyboard=True
     )
 
+    # Сообщение о текущей странице
+    if total_items > ITEMS_PER_PAGE:
+        page_info = f"📄 Страница {page + 1} из {((total_items - 1) // ITEMS_PER_PAGE) + 1}\n"
+    else:
+        page_info = ""
+
     # Сохраняем информацию о пагинации в состоянии
     await message.answer(
-        f"Показано {start_index + 1}-{min(end_index, total_items)} из {total_items} товаров",
+        f"{page_info}"
+        f"Показано <b>{len(paginated_furniture)}</b> из <b>{total_items}</b> товаров в категории",
         reply_markup=reply_markup
     )
 
@@ -227,7 +231,7 @@ async def origin_callback(callback_query: types.CallbackQuery, state: FSMContext
 
 
 # Обработчик для кнопки "Еще"
-@router.message(F.text == "Еще")
+@router.message(F.text == "🔄 Еще")
 async def more_furniture_handler(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
 
@@ -245,29 +249,3 @@ async def more_furniture_handler(message: types.Message, state: FSMContext):
 
     # Показываем следующую страницу
     await show_furniture_list(message, category_name, origin_name, kitchen_type, new_page)
-
-
-# Обработчик для кнопки "🏠 Главное меню"
-@router.message(F.text == "🏠 Главное меню")
-async def main_menu_handler(message: types.Message, state: FSMContext):
-    # Очищаем состояние
-    await state.clear()
-
-    # Показываем главное меню (логика из navigation_handler)
-    welcome_text = (
-        "Здравствуйте! 👋\n\n"
-        "Добро пожаловать в магазин мебели — здесь вы легко найдёте и оформите заказ на мебель для "
-        "всех комнат. Ниже — главное меню. Нажмите на категорию, чтобы посмотреть модели, задать вопрос "
-        "или оформить мини-заказ.\n\n"
-        "🔹 На каждом этапе кнопка «Назад» возвращает на предыдущий уровень.\n"
-        "🔹 Для оформления заказа потребуется имя и телефон.\n\n"
-        "Чем начнём? Выберите категорию из меню 👇"
-    )
-
-    from keyboard.button_template import start_kb
-    from keyboard.keyboard_builder import make_row_inline_keyboards
-
-    await message.answer(
-        welcome_text,
-        reply_markup=make_row_inline_keyboards(start_kb)
-    )

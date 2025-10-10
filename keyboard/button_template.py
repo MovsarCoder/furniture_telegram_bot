@@ -67,11 +67,6 @@ def get_accept_cancel_buttons(request_id: int):
     ]
 
 
-send_furnitures_buttons = [
-    "⏩",
-    "🏠 Главное меню"
-]
-
 more_added_furniture = [
     ("🔄 Добавить еще", "new_furniture"),
 ]
