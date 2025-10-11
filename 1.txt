@@ -16,3 +16,14 @@ https://hub.docker.com/r/movsarcoder/furniture_telegram_bot
 docker pull movsarcoder/furniture_telegram_bot:latest
 
 
+Для сервера
+
+sudo apt update
+sudo apt upgrade
+sudo apt --reinstall install python3  -y
+sudo apt --reinstall install python3-pip  -y
+sudo apt install nodejs
+sudo apt install npm
+npm install pm2 -g
+
+
