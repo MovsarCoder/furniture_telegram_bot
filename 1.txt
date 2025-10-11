@@ -1,0 +1,10 @@
+docker build -t furniture_telegram_bot .
+
+docker-compose up --build -d
+
+docker-compose logs -f
+
+docker login
+
+docker tag furniture_telegram_bot furniture_telegram_bot-bot:latest
+

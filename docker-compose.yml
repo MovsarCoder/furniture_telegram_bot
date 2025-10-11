@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: furniture_telegram_bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./database:/app/database
+      - ./logs:/app/logs
+    environment:
+      - PYTHONPATH=/app
+    ports:
+      - "8000:8000"  # Если бот будет иметь вебхуки или веб-интерфейс
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: furniture_bot_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: furniture_bot
+      POSTGRES_USER: bot_user
+      POSTGRES_PASSWORD: bot_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  adminer:
+    image: adminer
+    container_name: furniture_bot_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

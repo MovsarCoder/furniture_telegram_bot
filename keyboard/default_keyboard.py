@@ -11,16 +11,8 @@ profile_command = BotCommand(
     description='📊 Ваш профиль и статистика использования'
 )
 
-cooperation = BotCommand(
-    command='cooperation',
-    description='🤝 Варианты сотрудничества и партнерства'
-)
-
 # 📋 Список всех команд
 commands = [
     start_command,
     profile_command,
-    cooperation,
 ]
-
-
