@@ -29,20 +29,14 @@ class UserCrud:
             last_name: Optional[str],
             is_admin: Optional[bool] = False,
     ) -> Optional[User]:
-        """
-        Добавляет пользователя, если его ещё нет.
-        Возвращает созданный объект User при успехе, None при конфликте/ошибке.
-        """
+
         try:
-            # Сначала проверяем существование
             existing = await self.get_user_by_telegram_id(telegram_id)
             if existing:
                 logging.warning("Пользователь с telegram_id=%s уже существует в базе.", telegram_id)
                 return None
 
-            # Открываем сессию и транзакцию
             async with self.session() as session:
-                # Создаем объект модели
                 new_user = User(
                     telegram_id=telegram_id,
                     username=username,
@@ -58,17 +52,14 @@ class UserCrud:
                 return new_user
 
         except IntegrityError as exc:
-            # Ошибка целостности — возможен race condition или нарушение уникального ограничения
             logging.exception("IntegrityError при создании пользователя telegram_id=%s: %s", telegram_id, exc)
             return None
 
         except SQLAlchemyError as exc:
-            # Общая ошибка sqlalchemy
             logging.exception("Database error при создании пользователя telegram_id=%s: %s", telegram_id, exc)
             return None
 
         except Exception as exc:
-            # Неожиданная ошибка
             logging.exception("Неожиданная ошибка при add_user: %s", exc)
             return None
 
@@ -156,10 +147,12 @@ class CrudCategory:
                 await session.rollback()
                 logging.error("IntegrityError при создании категории '%s': %s", name, exc)
                 return False
+
             except SQLAlchemyError as exc:
                 await session.rollback()
                 logging.exception("SQLAlchemyError при создании категории '%s': %s", name, exc)
                 return False
+
             except Exception as exc:
                 await session.rollback()
                 logging.exception("Неожиданная ошибка при создании категории '%s': %s", name, exc)
@@ -189,25 +182,20 @@ class CrudFurniture:
             category: str,
             country: str,
     ) -> Optional[Furniture]:
-        """
-        Создаёт запись Furniture и возвращает объект (или None при ошибке).
-        Возврат объекта сохраняет совместимость с булевой проверкой (object -> True).
-        """
-        # Простейшая валидация/нормализация входных данных
         description = (description or "").strip()
         category = (category or "").strip()
         country = (country or "").strip()
 
         if not description:
-            logging.warning("create_furniture called with empty description")
+            logging.warning("Описание пустое. Не могу ничего добавить в базу!")
             return None
 
         if not category:
-            logging.warning("create_furniture called with empty category")
+            logging.warning("Категория пустая. Не могу ничего добавить в базу!")
             return None
 
         if not country:
-            logging.warning("create_furniture called with empty country")
+            logging.warning("Страна происхождения пустое. Не могу ничего добавить в базу!")
             return None
 
         async with self.session() as session:
@@ -219,12 +207,9 @@ class CrudFurniture:
                 )
                 session.add(new_item)
                 await session.commit()
-
-                # Обновим объект из БД (получим id и прочие default-поля)
                 try:
                     await session.refresh(new_item)
                 except Exception:
-                    # refresh не обязателен, но полезен; игнорируем если не поддерживается
                     logging.debug("session.refresh failed or not needed for Furniture")
 
                 logging.info("Создана мебель: %s (id=%s)", description, getattr(new_item, "id", None))
@@ -248,7 +233,7 @@ class CrudFurniture:
                 stmt = select(Furniture).where(
                     Furniture.category_name == category_name,
                     Furniture.country_origin == country
-                ).order_by(Furniture.id)  # Сортировка по ID для стабильной пагинации
+                ).order_by(Furniture.id)
                 result = await session.execute(stmt)
                 furniture = result.scalars().all()
                 return furniture or None
@@ -257,22 +242,11 @@ class CrudFurniture:
                 logging.exception("DB error in get_furniture_by_category_and_country: %s", exc)
 
     async def add_photos_to_furniture(self, furniture_id: int, photo_file_ids: List[str]) -> bool:
-        """
-        Добавляет фотографии к мебели.
-        
-        Args:
-            furniture_id: ID мебели
-            photo_file_ids: Список file_id фотографий из Telegram
-            
-        Returns:
-            bool: True если успешно, False если ошибка
-        """
         if not photo_file_ids:
             return False
 
         async with self.session() as session:
             try:
-                # Создаем объекты фотографий
                 photos = []
                 for file_id in photo_file_ids:
                     photo = FurniturePhoto(
@@ -281,7 +255,6 @@ class CrudFurniture:
                     )
                     photos.append(photo)
 
-                # Добавляем все фотографии
                 session.add_all(photos)
                 await session.commit()
                 logging.info("Добавлено %d фотографий к мебели с id=%s", len(photos), furniture_id)
@@ -298,15 +271,6 @@ class CrudFurniture:
                 return False
 
     async def get_furniture_photos(self, furniture_id: int) -> List[FurniturePhoto]:
-        """
-        Получает все фотографии для мебели.
-        
-        Args:
-            furniture_id: ID мебели
-            
-        Returns:
-            List[FurniturePhoto]: Список фотографий
-        """
         async with self.session() as session:
             try:
                 stmt = select(FurniturePhoto).where(FurniturePhoto.furniture_id == furniture_id)

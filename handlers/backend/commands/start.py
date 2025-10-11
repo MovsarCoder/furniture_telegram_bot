@@ -13,7 +13,7 @@ router = Router()
 
 
 @router.message(filters.Command("start"))
-@router.message(F.text == "🏠 Главное меню")  # Добавляем обработчик для кнопки "Главное меню"
+@router.message(F.text == "🏠 Главное меню")
 async def start(message: types.Message, state: FSMContext):
     await state.clear()
 
@@ -40,9 +40,7 @@ async def start(message: types.Message, state: FSMContext):
     telegram_id = message.from_user.id
     crud = UserCrud()
 
-    # Попытка зарегистрировать пользователя — add_user должен быть idempotent (не падать при повторной вставке)
     try:
-        # Ожидаем асинхронную операцию
         added_user = await crud.add_user(
             telegram_id=telegram_id,
             username=message.from_user.username,

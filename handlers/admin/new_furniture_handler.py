@@ -74,7 +74,6 @@ async def get_category(message: types.Message, state: FSMContext):
 
     await state.update_data(category_name=category_name)
 
-    # Проверка на кухонную мебель
     if "кухонная" in category_name.lower():
         text = (
             f"🗂 <b>Категория выбрана:</b> {category_name}\n\n"
@@ -85,7 +84,6 @@ async def get_category(message: types.Message, state: FSMContext):
         await message.answer(text, reply_markup=make_row_keyboards(kitchen_subcategory_kb))
         await state.set_state(NewFurnitureStates.kitchen_type)
     else:
-        # Для остальных категорий показываем выбор страны
         text = (
             f"🗂 <b>Категория выбрана:</b> {category_name}\n\n"
             f"📋 <b>Шаг 3 из 5:</b> Страна производства\n\n"
@@ -106,10 +104,7 @@ async def get_kitchen_type(message: types.Message, state: FSMContext):
                              "Пожалуйста, выберите тип кухни из предложенного списка.")
         return
 
-    # Сохраняем тип кухни
     await state.update_data(kitchen_type=kitchen_type)
-
-    # Для кухонной мебели страна всегда Россия
     await state.update_data(country_name="🇷🇺 Россия")
 
     text = (
@@ -123,7 +118,6 @@ async def get_kitchen_type(message: types.Message, state: FSMContext):
         f"Когда закончите, нажмите кнопку <b>«Завершить добавление»</b> ниже."
     )
 
-    # Создаем кнопку для завершения добавления фотографий
     finish_button = types.ReplyKeyboardMarkup(
         keyboard=[[types.KeyboardButton(text="✅ Завершить добавление")]],
         resize_keyboard=True
@@ -182,7 +176,6 @@ async def get_photos(message: types.Message, state: FSMContext):
         country_name = data.get("country_name", "Не указана")
         kitchen_type = data.get("kitchen_type")
 
-        # Для кухонной мебели добавляем тип кухни в описание
         if kitchen_type and "кухонная" in category_name.lower():
             description = f"[{kitchen_type}] {description}"
 
@@ -199,7 +192,6 @@ async def get_photos(message: types.Message, state: FSMContext):
                                  "Обратитесь к администратору или попробуйте позже.")
             return
 
-        # Добавляем фотографии к созданной мебели
         photo_added = await crud.add_photos_to_furniture(new_furniture.id, photos)
 
         if not photo_added:
@@ -225,22 +217,17 @@ async def get_photos(message: types.Message, state: FSMContext):
         await state.clear()
         return
 
-    # Если получено фото, добавляем его к списку
     if message.photo:
-        # Берем фото самого высокого качества
         photo_file_id = message.photo[-1].file_id
         photos.append(photo_file_id)
         await state.update_data(photos=photos)
 
-        # Подтверждаем получение фото
         await message.answer(f"✅ Фото добавлено ({len(photos)}/10)\n\n"
                              f"📸 Отправьте еще фотографии или нажмите «Завершить добавление».")
 
-        # Проверяем лимит
         if len(photos) >= 10:
             await message.answer("Вы достигли максимального количества фотографий (10).\n"
                                  "Нажмите «Завершить добавление» для сохранения мебели.")
     else:
-        # Если сообщение не фото и не кнопка завершения
         await message.answer("⚠️ <b>Неподдерживаемый формат</b>\n\n"
                              "Пожалуйста, отправьте фотографию или нажмите кнопку «Завершить добавление».")

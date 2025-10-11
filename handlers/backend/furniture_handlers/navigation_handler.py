@@ -1,7 +1,3 @@
-"""
-Обработчик навигации для мебельного бота.
-"""
-
 from aiogram import Router, F, types
 from aiogram.fsm.context import FSMContext
 
@@ -13,11 +9,8 @@ router = Router()
 
 @router.callback_query(F.data == "back_to_main")
 async def back_to_main_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    """Возврат в главное меню."""
-    # Очищаем состояние
     await state.clear()
-    
-    # Показываем главное меню
+
     welcome_text = (
         "🏠 <b>Главное меню</b>\n\n"
         "👋 Добро пожаловать в наш мебельный магазин!\n\n"
@@ -33,7 +26,7 @@ async def back_to_main_callback(callback_query: types.CallbackQuery, state: FSMC
         "🤝 <b>Сотрудничество</b> - для оптовиков\n\n"
         "📌 <i>Используйте кнопки ниже для навигации</i>"
     )
-    
+
     await callback_query.message.edit_text(
         welcome_text,
         reply_markup=make_row_inline_keyboards(start_kb)

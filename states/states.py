@@ -13,6 +13,6 @@ class NewCategoryStates(StatesGroup):
 class NewFurnitureStates(StatesGroup):
     description = State()
     category = State()
-    kitchen_type = State()  # Новое состояние для типа кухни
+    kitchen_type = State()
     country = State()
     photos = State()
