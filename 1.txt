@@ -6,5 +6,13 @@ docker-compose logs -f
 
 docker login
 
-docker tag furniture_telegram_bot furniture_telegram_bot-bot:latest
+docker tag furniture_telegram_bot movsarcoder/furniture_telegram_bot:latest
+
+docker push movsarcoder/furniture_telegram_bot:latest
+
+
+https://hub.docker.com/r/movsarcoder/furniture_telegram_bot
+
+docker pull movsarcoder/furniture_telegram_bot:latest
+
 
