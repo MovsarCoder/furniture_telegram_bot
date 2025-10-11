@@ -26,6 +26,8 @@ sudo apt install nodejs
 sudo apt install npm
 npm install pm2 -g
 
+nano .env и туда все вещи из nano
+
 
 ssh root@80.90.187.3
 vx8?-ES+8r#F-1
