@@ -37,9 +37,9 @@ class Furniture(Base):
     id = Column(Integer, primary_key=True, index=True)
     description = Column(Text, nullable=True)
     category_name = Column(String, ForeignKey('categories.name'), nullable=False)
-    country_origin = Column(String, nullable=True)  # Страна производства (RU, TR и т.д.)
+    country_origin = Column(String, nullable=True)  # Страна производства (RU, TR)
     created_at = Column(DateTime, default=lambda: datetime.now())
-    
+
     # Связь с фотографиями
     photos = relationship("FurniturePhoto", back_populates="furniture", cascade="all, delete-orphan")
 
@@ -52,7 +52,7 @@ class FurniturePhoto(Base):
     file_id = Column(String, nullable=False)  # ID файла в Telegram
     file_path = Column(String, nullable=True)  # Путь к файлу (опционально)
     created_at = Column(DateTime, default=lambda: datetime.now())
-    
+
     # Связь с мебелью
     furniture = relationship("Furniture", back_populates="photos")
 
