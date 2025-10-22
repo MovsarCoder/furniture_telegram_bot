@@ -11,3 +11,6 @@ router.include_router(starts_router)
 
 from .about_company import router as about_company_router
 router.include_router(about_company_router)
+
+from .help import router as help_router
+router.include_router(help_router)
