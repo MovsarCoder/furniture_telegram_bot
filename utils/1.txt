@@ -4,6 +4,8 @@ docker-compose up --build -d
 
 docker-compose logs -f
 
+docker-compose down
+
 docker login
 
 docker tag furniture_telegram_bot movsarcoder/furniture_telegram_bot:latest

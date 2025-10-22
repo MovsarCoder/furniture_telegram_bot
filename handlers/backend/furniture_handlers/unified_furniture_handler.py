@@ -7,7 +7,6 @@ from settings import config
 from database.crud import CrudFurniture
 from keyboard.button_template import contry_of_origin_kb, kitchen_subcategory_inline_kb
 from keyboard.keyboard_builder import make_row_inline_keyboards
-from .navigation_handler import back_to_main_callback
 
 router = Router()
 
@@ -165,24 +164,20 @@ async def furniture_callback(callback_query: types.CallbackQuery, state: FSMCont
 
 
 @router.callback_query(F.data.in_(KITCHEN_SUBCATEGORIES.keys()))
-@router.callback_query(F.data == "back_to_main")
 async def kitchen_subcategory_callback(callback_query: types.CallbackQuery, state: FSMContext):
-    if callback_query.data == "back_to_main":
-        await back_to_main_callback(callback_query, state)
-    else:
-        kitchen_type_key = callback_query.data
-        kitchen_type = KITCHEN_SUBCATEGORIES.get(kitchen_type_key, 'Кухня')
+    kitchen_type_key = callback_query.data
+    kitchen_type = KITCHEN_SUBCATEGORIES.get(kitchen_type_key, 'Кухня')
 
-        await state.update_data(kitchen_subcategory=kitchen_type_key)
-        await state.update_data(selected_kitchen_type=kitchen_type)
-        await state.update_data(current_page=0)  # Тут сброс пагинации
+    await state.update_data(kitchen_subcategory=kitchen_type_key)
+    await state.update_data(selected_kitchen_type=kitchen_type)
+    await state.update_data(current_page=0)  # Тут сброс пагинации
 
-        await show_furniture_list(
-            callback_query.message,
-            "🍳 Кухонная мебель",
-            "🇷🇺 Россия",
-            kitchen_type
-        )
+    await show_furniture_list(
+        callback_query.message,
+        "🍳 Кухонная мебель",
+        "🇷🇺 Россия",
+        kitchen_type
+    )
 
     await callback_query.answer()
 
